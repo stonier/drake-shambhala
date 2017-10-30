@@ -33,3 +33,7 @@
 add_subdirectory(find_resource)
 add_subdirectory(particles)
 add_subdirectory(simple_continuous_time_system)
+
+add_executable(yaml_to_obj yaml_to_obj.cc)
+target_link_libraries(yaml_to_obj drake::drake)
+install(TARGETS yaml_to_obj DESTINATION "${CMAKE_INSTALL_BINDIR}")
