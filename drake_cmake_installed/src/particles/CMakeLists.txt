@@ -43,8 +43,13 @@ target_link_libraries(uniformly_accelerated_particle particles
   drake::drake drake::drake-common-text-logging-gflags gflags_shared
 )
 
-install(TARGETS uniformly_accelerated_particle_demo DESTINATION "${CMAKE_INSTALL_BINDIR}")
-install(TARGETS particles DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+install(TARGETS uniformly_accelerated_particle 
+        RUNTIME DESTINATION bin
+        )
+install(TARGETS particles 
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        )
 
 find_package(GTest MODULE)
 
