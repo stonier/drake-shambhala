@@ -12,52 +12,57 @@
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
- * * Neither the name of the Massachusetts Institute of Technology nor the
- *   names of its contributors may be used to endorse or promote products
- *   derived from this software without specific prior written permission.
+ * * Neither the name of the copyright holder nor the names of its contributors
+ *   may be used to endorse or promote products derived from this software
+ *   without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE MASSACHUSETTS INSTITUTE OF TECHNOLOGY AND
- * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT
- * NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE MASSACHUSETTS
- * INSTITUTE OF TECHNOLOGY OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
 ///
 /// @brief  A simple 1DOF, constantly accelerated particle example.
 ///
 
-#include <cstdlib>
+#include <sys/stat.h>
+
 #include <limits>
 #include <memory>
-#include <sys/stat.h>
+#include <stdexcept>
+#include <string>
 
 #include <gflags/gflags.h>
 
+#include <drake/common/drake_copyable.h>
+#include <drake/common/eigen_types.h>
 #include <drake/common/text_logging_gflags.h>
 #include <drake/lcm/drake_lcm.h>
+#include <drake/multibody/joints/floating_base_types.h>
 #include <drake/multibody/parsers/sdf_parser.h>
 #include <drake/multibody/rigid_body_plant/drake_visualizer.h>
+#include <drake/multibody/rigid_body_tree.h>
+#include <drake/systems/analysis/simulator.h>
+#include <drake/systems/framework/context.h>
 #include <drake/systems/framework/diagram.h>
 #include <drake/systems/framework/diagram_builder.h>
+#include <drake/systems/framework/vector_base.h>
 #include <drake/systems/primitives/constant_vector_source.h>
-#include <drake/systems/analysis/simulator.h>
 
 #include "particle.h"
 #include "utilities.h"
 
-DEFINE_double(initial_position, 0.0,
-              "Particle initial x position");
-DEFINE_double(initial_velocity, 0.0,
-              "Particle initial x velocity");
-DEFINE_double(acceleration, 1.0,
-              "Particle constant x acceleration");
+DEFINE_double(initial_position, 0.0, "Particle initial x position");
+DEFINE_double(initial_velocity, 0.0, "Particle initial x velocity");
+DEFINE_double(acceleration, 1.0, "Particle constant x acceleration");
 DEFINE_double(realtime_rate, 1.0,
               "Rate at which to run the simulation, relative to realtime");
 DEFINE_double(simulation_time, std::numeric_limits<double>::infinity(),
@@ -74,7 +79,7 @@ static const char* const kParticleSdfPath = "particle.sdf";
 /// @return existence (true) or otherwise (false)
 bool file_exists(const std::string& name) {
   struct stat buffer;
-  return (stat (name.c_str(), &buffer) == 0);
+  return (stat(name.c_str(), &buffer) == 0);
 }
 
 /// A sample diagram for visualizing a 1DOF particle to which a
@@ -102,14 +107,13 @@ class UniformlyAcceleratedParticle : public drake::systems::Diagram<T> {
   /// @param[in] position in m units.
   /// @param[in] velocity in m/s units.
   /// @return a newly created Context.
-  std::unique_ptr<drake::systems::Context<T>>
-  CreateContext(const T& position, const T& velocity) const;
+  std::unique_ptr<drake::systems::Context<T>> CreateContext(
+      const T& position, const T& velocity) const;
 
  private:
   /// RigidBodyTree particle representation
   /// (for visualizations purposes only).
-  std::unique_ptr<RigidBodyTree<T>> tree_{
-    std::make_unique<RigidBodyTree<T>>()};
+  std::unique_ptr<RigidBodyTree<T>> tree_{std::make_unique<RigidBodyTree<T>>()};
 };
 
 template <typename T>
@@ -117,20 +121,20 @@ UniformlyAcceleratedParticle<T>::UniformlyAcceleratedParticle(
     const T& acceleration, drake::lcm::DrakeLcmInterface* lcm) {
   // Parse particle sdf into rigid body tree.
   if (!file_exists(kParticleSdfPath)) {
-      throw std::runtime_error(std::string("could not find '") + kParticleSdfPath + std::string("'"));
+    throw std::runtime_error(std::string("could not find '") +
+                             kParticleSdfPath + std::string("'"));
   }
   // using the custom sdf parser from Drake
   drake::parsers::sdf::AddModelInstancesFromSdfFileToWorld(
-      kParticleSdfPath,
-      drake::multibody::joints::kRollPitchYaw,
-      tree_.get());
+      kParticleSdfPath, drake::multibody::joints::kRollPitchYaw, tree_.get());
   // Compile tree one more time just to be sure.
   tree_->compile();
   // Building diagram.
   drake::systems::DiagramBuilder<T> builder;
   // Adding constant acceleration source.
   auto constant_acceleration_vector_source =
-    builder.template AddSystem<drake::systems::ConstantVectorSource<T>>(acceleration);
+      builder.template AddSystem<drake::systems::ConstantVectorSource<T>>(
+          acceleration);
   // Adding particle.
   auto particle = builder.template AddSystem<Particle<T>>();
   // Adding particle joint.
@@ -138,8 +142,8 @@ UniformlyAcceleratedParticle<T>::UniformlyAcceleratedParticle(
   // Only first generalized coordinate gets through.
   translating_matrix.setZero();
   translating_matrix(0, 0) = 1.0;
-  auto particle_joint =
-      builder.template AddSystem(shambhala::particles::MakeDegenerateEulerJoint(translating_matrix));
+  auto particle_joint = builder.template AddSystem(
+      shambhala::particles::MakeDegenerateEulerJoint(translating_matrix));
   // Adding visualizer client.
   auto visualizer =
       builder.template AddSystem<drake::systems::DrakeVisualizer>(*tree_, lcm);
@@ -152,13 +156,13 @@ UniformlyAcceleratedParticle<T>::UniformlyAcceleratedParticle(
 
 template <typename T>
 std::unique_ptr<drake::systems::Context<T>>
-UniformlyAcceleratedParticle<T>::CreateContext(
-    const T& position, const T& velocity) const {
+UniformlyAcceleratedParticle<T>::CreateContext(const T& position,
+                                               const T& velocity) const {
   // Allocate context.
   auto context = this->AllocateContext();
   // Set continuous state.
   drake::systems::VectorBase<T>& cstate =
-    context->get_mutable_continuous_state_vector();
+      context->get_mutable_continuous_state_vector();
   cstate.SetAtIndex(0, position);
   cstate.SetAtIndex(1, velocity);
   return context;
@@ -168,23 +172,23 @@ UniformlyAcceleratedParticle<T>::CreateContext(
 /// Main function for demo.
 ///
 int main(int argc, char* argv[]) {
-  gflags::SetUsageMessage("A very simple demonstration, "
-                          "make sure drake-visualizer is running!");
+  gflags::SetUsageMessage(
+      "A very simple demonstration, "
+      "make sure drake-visualizer is running!");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   drake::logging::HandleSpdlogGflags();
   // Instantiate interface and start receiving.
-  auto interface = std::make_unique< drake::lcm::DrakeLcm >();
+  auto interface = std::make_unique<drake::lcm::DrakeLcm>();
   interface->StartReceiveThread();
   // Instantiate example system.
-  auto system =
-      std::make_unique<UniformlyAcceleratedParticle<double>>(
-          FLAGS_acceleration, interface.get());
+  auto system = std::make_unique<UniformlyAcceleratedParticle<double>>(
+      FLAGS_acceleration, interface.get());
   // Get context with initial conditions.
   auto context =
-    system->CreateContext(FLAGS_initial_position, FLAGS_initial_velocity);
+      system->CreateContext(FLAGS_initial_position, FLAGS_initial_velocity);
   // Instantiate and configure simulator.
-  auto simulator =
-    std::make_unique<drake::systems::Simulator<double>>(*system, std::move(context));
+  auto simulator = std::make_unique<drake::systems::Simulator<double>>(
+      *system, std::move(context));
   simulator->set_target_realtime_rate(FLAGS_realtime_rate);
   simulator->Initialize();
   // Run simulation.
@@ -195,6 +199,6 @@ int main(int argc, char* argv[]) {
 }  // namespace particles
 }  // namespace shambhala
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   return shambhala::particles::main(argc, argv);
 }

@@ -12,24 +12,27 @@
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
- * * Neither the name of the Massachusetts Institute of Technology nor the
- *   names of its contributors may be used to endorse or promote products
- *   derived from this software without specific prior written permission.
+ * * Neither the name of the copyright holder nor the names of its contributors
+ *   may be used to endorse or promote products derived from this software
+ *   without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE MASSACHUSETTS INSTITUTE OF TECHNOLOGY AND
- * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT
- * NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE MASSACHUSETTS
- * INSTITUTE OF TECHNOLOGY OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
 #include "particle.h"
+
+#include <drake/systems/framework/framework_common.h>
+#include <drake/systems/framework/vector_base.h>
 
 namespace shambhala {
 namespace particles {
@@ -46,9 +49,8 @@ Particle<T>::Particle() {
 }
 
 template <typename T>
-void Particle<T>::CopyStateOut(
-    const drake::systems::Context<T>& context,
-    drake::systems::BasicVector<T>* output) const {
+void Particle<T>::CopyStateOut(const drake::systems::Context<T>& context,
+                               drake::systems::BasicVector<T>* output) const {
   // Get current state from context.
   const drake::systems::VectorBase<T>& continuous_state_vector =
       context.get_continuous_state_vector();
@@ -62,10 +64,10 @@ void Particle<T>::DoCalcTimeDerivatives(
     drake::systems::ContinuousState<T>* derivatives) const {
   // Get current state from context.
   const drake::systems::VectorBase<T>& continuous_state_vector =
-    context.get_continuous_state_vector();
+      context.get_continuous_state_vector();
   // Obtain the structure we need to write into.
   drake::systems::VectorBase<T>& derivatives_vector =
-    derivatives->get_mutable_vector();
+      derivatives->get_mutable_vector();
   // Get current input acceleration value.
   const drake::systems::BasicVector<T>* input_vector =
       this->EvalVectorInput(context, 0);

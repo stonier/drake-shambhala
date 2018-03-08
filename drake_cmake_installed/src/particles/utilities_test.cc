@@ -1,12 +1,46 @@
-#include "../utilities.h"
+/*****************************************************************************
+ * Copyright (c) 2017, Massachusetts Institute of Technology.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice,
+ *   this list of conditions and the following disclaimer.
+ *
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * * Neither the name of the copyright holder nor the names of its contributors
+ *   may be used to endorse or promote products derived from this software
+ *   without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *****************************************************************************/
+
+#include "utilities.h"  // IWYU pragma: associated
 
 #include <memory>
+#include <stdexcept>
 
 #include <gtest/gtest.h>
 
 #include <drake/systems/framework/basic_vector.h>
+#include <drake/systems/framework/context.h>
+#include <drake/systems/framework/input_port_descriptor.h>
+#include <drake/systems/framework/output_port_value.h>
 #include <drake/systems/framework/system.h>
-#include <drake/systems/framework/vector_base.h>
 
 namespace shambhala {
 namespace particles {
@@ -27,7 +61,8 @@ class SingleDOFEulerJointTest : public ::testing::Test {
     drake::MatrixX<T> translating_matrix(6, 1);
     translating_matrix.setZero();
     translating_matrix(0, 0) = 1.0;
-    this->dut_ = shambhala::particles::MakeDegenerateEulerJoint(translating_matrix);
+    this->dut_ =
+        shambhala::particles::MakeDegenerateEulerJoint(translating_matrix);
     this->context_ = this->dut_->CreateDefaultContext();
     this->output_ = this->dut_->AllocateOutput(*this->context_);
   }
@@ -52,7 +87,8 @@ TYPED_TEST_P(SingleDOFEulerJointTest, OutputTest) {
       input_descriptor.size());
   input->SetZero();
   input->SetAtIndex(0, static_cast<TypeParam>(1.0));  // q0 = 1.0
-  input->SetAtIndex(input->size()/2, static_cast<TypeParam>(5.0));  // v0 = 5.0
+  input->SetAtIndex(input->size() / 2,
+                    static_cast<TypeParam>(5.0));  // v0 = 5.0
   this->context_->FixInputPort(0, std::move(input));
   // Compute outputs.
   this->dut_->CalcOutput(*this->context_, this->output_.get());
@@ -78,9 +114,11 @@ INSTANTIATE_TYPED_TEST_CASE_P(WithDoubles, SingleDOFEulerJointTest, double);
 /// (rows != 6).
 GTEST_TEST(DegenerateEulerJointDimensionalityChecks, WrongOutputDOFTest) {
   // Scalar type is fixed as it makes no difference.
-  ASSERT_THROW({
-      auto bad_joint = MakeDegenerateEulerJoint(drake::MatrixX<double>(4, 4));
-    }, std::runtime_error);
+  ASSERT_THROW(
+      {
+        auto bad_joint = MakeDegenerateEulerJoint(drake::MatrixX<double>(4, 4));
+      },
+      std::runtime_error);
 }
 
 /// Makes sure that MakeDegenerateEulerJoint throws when the given
@@ -88,9 +126,11 @@ GTEST_TEST(DegenerateEulerJointDimensionalityChecks, WrongOutputDOFTest) {
 /// (cols >= 6).
 GTEST_TEST(DegenerateEulerJointDimensionalityChecks, TooManyInputDOFTest) {
   // Scalar type is fixed as it makes no difference.
-  ASSERT_THROW({
-      auto bad_joint = MakeDegenerateEulerJoint(drake::MatrixX<double>(6, 8));
-    }, std::runtime_error);
+  ASSERT_THROW(
+      {
+        auto bad_joint = MakeDegenerateEulerJoint(drake::MatrixX<double>(6, 8));
+      },
+      std::runtime_error);
 }
 
 /// Makes sure that MakeDegenerateEulerJoint throws when the given
@@ -98,9 +138,11 @@ GTEST_TEST(DegenerateEulerJointDimensionalityChecks, TooManyInputDOFTest) {
 /// input (cols < 1).
 GTEST_TEST(DegenerateEulerJointDimensionalityChecks, TooFewInputDOFTest) {
   // Scalar type is fixed as it makes no difference.
-  ASSERT_THROW({
-      auto bad_joint = MakeDegenerateEulerJoint(drake::MatrixX<double>(6, 0));
-    }, std::runtime_error);
+  ASSERT_THROW(
+      {
+        auto bad_joint = MakeDegenerateEulerJoint(drake::MatrixX<double>(6, 0));
+      },
+      std::runtime_error);
 }
 
 }  // namespace

@@ -1,4 +1,7 @@
-# Copyright (c) 2017, Massachusetts Institute of Technology.
+# -*- mode: python -*-
+# vi: set ft= python :
+
+# Copyright (c) 2018, Toyota Research Institute.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,6 +30,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-.idea
-/build/
-cmake-build-debug
+"""Test the Drake find resource API."""
+
+from pydrake.common import FindResourceOrThrow
+
+FindResourceOrThrow('drake/examples/atlas/urdf/atlas_convex_hull.urdf')

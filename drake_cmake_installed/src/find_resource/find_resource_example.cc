@@ -29,46 +29,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-#pragma once
+///
+/// @brief  A simple find_resource test for locating installed drake resources.
+///
 
-#include <memory>
+#include <iostream>
+#include <stdexcept>
 
-#include <drake/common/eigen_types.h>
-#include <drake/systems/primitives/matrix_gain.h>
+#include <drake/common/find_resource.h>
 
 namespace shambhala {
-namespace particles {
+namespace {
 
-/// Makes an NDOF to 6DOF poses mapping system.
-///
-/// The given matrix @f$ \mathbf{M}_{\mathrm{6,N}} @f$ is
-/// augmented to deal with position and velocity
-/// state input @f$ [\mathbf{q} ; \mathbf{v}] @f$ as follows:
-///
-/// @f[ M^*_{\mathrm{12,2N}} =
-///     \begin{bmatrix}
-///       \mathbf{M}_{\mathrm{6,N}} & \mathbf{0}_{\mathrm{6,N}}
-///    \\ \mathbf{0}_{\mathrm{6,N}} & \mathbf{M}_{\mathrm{6,N}}
-///     \end{bmatrix}
-/// @f]
-///
-/// @param[in] translator 6xN matrix to translate inputs to outputs, where
-/// 0 < N < 6.
-/// @return MatrixGain representing the joint.
-/// @throws std::runtime_error whenever @p translator matrix implies
-/// M DOF output where M is not 6, or an N DOF input where N is not a
-/// positive non-zero integer that is less than 6.
-///
-/// @tparam T must be a valid Eigen ScalarType.
-///
-/// @note
-/// Instantiated templates for the following scalar types
-/// @p T are provided:
-/// - double
-///
-template <typename T>
-std::unique_ptr<typename drake::systems::MatrixGain<T>>
-MakeDegenerateEulerJoint(const drake::MatrixX<T>& translator);
+int main() {
+  drake::FindResourceOrThrow(
+      "drake/manipulation/models/iiwa_description/urdf/"
+      "iiwa14_primitive_collision.urdf");
 
-}  // namespace particles
+  try {
+    drake::FindResourceOrThrow("nobody_home.urdf");
+    std::cerr << "Should have thrown" << std::endl;
+    return 1;
+  } catch (const std::runtime_error&) {
+  }
+
+  return 0;
+}
+
+}  // namespace
 }  // namespace shambhala
+
+int main() { return shambhala::main(); }

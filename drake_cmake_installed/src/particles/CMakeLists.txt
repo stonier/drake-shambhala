@@ -14,47 +14,57 @@
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
 #
-# * Neither the name of the Massachusetts Institute of Technology nor the names
-#   of its contributors may be used to endorse or promote products derived from
-#   this software without specific prior written permission.
+# * Neither the name of the copyright holder nor the names of its contributors
+#   may be used to endorse or promote products derived from this software
+#   without specific prior written permission.
 #
-# THIS SOFTWARE IS PROVIDED BY THE MASSACHUSETTS INSTITUTE OF TECHNOLOGY AND
-# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT
-# NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE MASSACHUSETTS
-# INSTITUTE OF TECHNOLOGY OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
-# send over the sdf file so the particle example can be run 'in place'.
-configure_file(models/particle.sdf ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+# Send over the SDF file so the particle example can be run "in place."
+configure_file(models/particle.sdf "${CMAKE_CURRENT_BINARY_DIR}" COPYONLY)
 
-add_library(particles SHARED particle.cc utilities.cc)
+add_library(particles SHARED particle.cc particle.h utilities.cc utilities.h)
 target_link_libraries(particles drake::drake)
 
 find_package(GFlags MODULE REQUIRED COMPONENTS shared)
 
-add_executable(uniformly_accelerated_particle_demo uniformly_accelerated_particle.cc)
-target_link_libraries(uniformly_accelerated_particle_demo particles
-  drake::drake drake::drake-common-text-logging-gflags gflags_shared)
+add_executable(uniformly_accelerated_particle uniformly_accelerated_particle.cc)
+target_link_libraries(uniformly_accelerated_particle particles
+  drake::drake drake::drake-common-text-logging-gflags gflags_shared
+)
 
 install(TARGETS uniformly_accelerated_particle_demo DESTINATION "${CMAKE_INSTALL_BINDIR}")
 install(TARGETS particles DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
 find_package(GTest MODULE)
 
+# TODO(EricCousineau-TRI, jamiesnape): Rewrite these tests to not use GTest.
 if(GTEST_FOUND)
-  add_executable(test_particle test/test_particle.cc)
-  target_link_libraries(test_particle
-    GTest::GTest GTest::Main particles drake::drake)
-  add_executable(test_utilities test/test_utilities.cc)
-  target_link_libraries(test_utilities
-    GTest::GTest GTest::Main particles drake::drake)
+  add_executable(particle_test particle_test.cc)
+  target_include_directories(particle_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+  )
+  target_link_libraries(particle_test
+    particles drake::drake GTest::GTest GTest::Main
+  )
+  add_test(NAME particle_test COMMAND particle_test)
 
-  add_test(NAME test_particle COMMAND test_particle)
-  add_test(NAME test_utilities COMMAND test_utilities)
+  add_executable(utilities_test utilities_test.cc)
+  target_include_directories(utilities_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+  )
+  target_link_libraries(utilities_test
+    particles drake::drake GTest::GTest GTest::Main
+  )
+  add_test(NAME utilities_test COMMAND utilities_test)
 endif()
