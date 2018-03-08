@@ -33,7 +33,7 @@
 # send over the sdf file so the particle example can be run 'in place'.
 configure_file(models/particle.sdf ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
-add_library(particles particle.cc utilities.cc)
+add_library(particles SHARED particle.cc utilities.cc)
 target_link_libraries(particles drake::drake)
 
 find_package(GFlags MODULE REQUIRED COMPONENTS shared)
@@ -41,6 +41,9 @@ find_package(GFlags MODULE REQUIRED COMPONENTS shared)
 add_executable(uniformly_accelerated_particle_demo uniformly_accelerated_particle.cc)
 target_link_libraries(uniformly_accelerated_particle_demo particles
   drake::drake drake::drake-common-text-logging-gflags gflags_shared)
+
+install(TARGETS uniformly_accelerated_particle_demo DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(TARGETS particles DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
 find_package(GTest MODULE)
 
